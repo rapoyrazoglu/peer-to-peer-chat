@@ -24,7 +24,19 @@ No central server. No data collection. No censorship. Just peers talking to peer
 
 ## Installation
 
-### Linux / macOS / Windows
+Download the installer for your platform from the [latest release](https://github.com/rapoyrazoglu/peer-to-peer-chat/releases/latest):
+
+| Platform | Download | Install |
+|----------|----------|---------|
+| **Windows** | `peerchat-setup.exe` | Run the installer, choose directory, done |
+| **macOS (Apple Silicon)** | `peerchat-macos-arm64.pkg` | Open the .pkg, follow the wizard |
+| **macOS (Intel)** | `peerchat-macos-x86_64.pkg` | Open the .pkg, follow the wizard |
+| **Arch Linux** | AUR | `yay -S peerchat` |
+| **Linux (other)** | `peerchat-linux-x86_64.tar.gz` | Extract and copy to `/usr/local/bin/` |
+
+After installation, `peerchat` is available from any terminal.
+
+### Building from Source
 
 ```bash
 git clone https://github.com/rapoyrazoglu/peer-to-peer-chat.git
@@ -34,33 +46,7 @@ cmake --build build -j$(nproc)
 sudo cmake --install build
 ```
 
-After installation, `peerchat` is available system-wide.
-
 **Dependencies:** CMake 3.20+, C++20 compiler, libsodium (optional)
-
-### Arch Linux (AUR)
-
-```bash
-yay -S peerchat
-```
-
-### Pre-built Binaries
-
-Download from the [latest release](https://github.com/rapoyrazoglu/peer-to-peer-chat/releases/latest) page:
-
-| Platform | File |
-|----------|------|
-| Linux x86_64 | `peerchat-linux-x86_64.tar.gz` |
-| macOS Intel | `peerchat-macos-x86_64.tar.gz` |
-| macOS ARM | `peerchat-macos-arm64.tar.gz` |
-| Windows | `peerchat-windows-x86_64.zip` |
-
-Extract and move to your PATH:
-
-```bash
-tar xzf peerchat-*.tar.gz
-sudo mv peerchat /usr/local/bin/
-```
 
 ## Usage
 
