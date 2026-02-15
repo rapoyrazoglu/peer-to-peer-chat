@@ -7,11 +7,11 @@
 TEST(VersionTest, MajorMinorPatch) {
     EXPECT_EQ(peerchat::Version::major, 0);
     EXPECT_EQ(peerchat::Version::minor, 2);
-    EXPECT_EQ(peerchat::Version::patch, 0);
+    EXPECT_EQ(peerchat::Version::patch, 1);
 }
 
 TEST(VersionTest, VersionString) {
-    EXPECT_EQ(peerchat::Version::string(), "0.2.0");
+    EXPECT_EQ(peerchat::Version::string(), "0.2.1");
 }
 
 TEST(VersionTest, CommitHashNotEmpty) {
@@ -27,5 +27,7 @@ TEST(VersionTest, ParseAndCompare) {
     auto v1 = peerchat::Version::parse("v0.1.0");
     auto v2 = peerchat::Version::parse("0.2.0");
     EXPECT_TRUE(v1 < v2);
-    EXPECT_EQ(v2, peerchat::Version::current());
+    auto v3 = peerchat::Version::parse("0.2.1");
+    EXPECT_TRUE(v2 < v3);
+    EXPECT_EQ(v3, peerchat::Version::current());
 }

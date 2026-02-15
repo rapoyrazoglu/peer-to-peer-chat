@@ -8,7 +8,7 @@ namespace peerchat {
 struct Version {
     static constexpr int major = 0;
     static constexpr int minor = 2;
-    static constexpr int patch = 0;
+    static constexpr int patch = 1;
 
     int maj{0};
     int min{0};

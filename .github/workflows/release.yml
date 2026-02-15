@@ -88,43 +88,6 @@ jobs:
           name: peerchat-macos-arm64
           path: peerchat-macos-arm64.pkg
 
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install OpenSSL via vcpkg
-        run: vcpkg install openssl:x64-windows-static
-
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPEERCHAT_BUILD_TESTS=OFF -DPEERCHAT_NO_SODIUM=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DOPENSSL_USE_STATIC_LIBS=TRUE -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
-
-      - name: Build
-        run: cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
-
-      - name: Install NSIS
-        run: choco install nsis -y
-
-      - name: Install EnVar plugin
-        run: |
-          $pluginUrl = "https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip"
-          Invoke-WebRequest -Uri $pluginUrl -OutFile envar.zip
-          Expand-Archive envar.zip -DestinationPath envar
-          Copy-Item envar/Plugins/x86-ansi/* "C:/Program Files (x86)/NSIS/Plugins/x86-ansi/" -Force
-          Copy-Item envar/Plugins/x86-unicode/* "C:/Program Files (x86)/NSIS/Plugins/x86-unicode/" -Force
-
-      - name: Create installer
-        run: |
-          Copy-Item build/Release/peerchat.exe packaging/windows/
-          & "C:/Program Files (x86)/NSIS/makensis.exe" packaging/windows/installer.nsi
-          Move-Item packaging/windows/peerchat-setup.exe .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: peerchat-windows-setup
-          path: peerchat-setup.exe
-
   build-arch-pkg:
     runs-on: ubuntu-latest
     container:
@@ -157,7 +120,7 @@ jobs:
           path: peerchat-arch-x86_64.tar.gz
 
   create-release:
-    needs: [build-linux, build-macos-intel, build-macos-arm, build-windows, build-arch-pkg]
+    needs: [build-linux, build-macos-intel, build-macos-arm, build-arch-pkg]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -173,5 +136,4 @@ jobs:
             artifacts/peerchat-linux-x86_64/peerchat-linux-x86_64.tar.gz
             artifacts/peerchat-macos-x86_64/peerchat-macos-x86_64.pkg
             artifacts/peerchat-macos-arm64/peerchat-macos-arm64.pkg
-            artifacts/peerchat-windows-setup/peerchat-setup.exe
             artifacts/peerchat-arch-x86_64/peerchat-arch-x86_64.tar.gz

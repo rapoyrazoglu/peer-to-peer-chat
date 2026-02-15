@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(peerchat
-    VERSION 0.2.0
+    VERSION 0.2.1
     DESCRIPTION "Peer-to-peer decentralized chat application"
     LANGUAGES CXX
 )
