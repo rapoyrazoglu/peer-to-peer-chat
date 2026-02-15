@@ -23,6 +23,7 @@ struct Message {
     std::string id;       // UUID for text messages, echoed in ACKs
     std::string sender;   // peer ID
     std::string nickname; // display name
+    std::string tag;      // 4-digit identity tag
     std::string body;     // text content (for Text), empty for control msgs
     int64_t timestamp{0}; // Unix epoch milliseconds
 
@@ -33,9 +34,12 @@ struct Message {
     static Message deserialize(const std::string& data);
 
     static Message make_handshake(const std::string& peer_id,
-                                  const std::string& nick);
+                                  const std::string& nick,
+                                  const std::string& tag);
     static Message make_text(const std::string& peer_id,
-                             const std::string& nick, const std::string& body);
+                             const std::string& nick,
+                             const std::string& tag,
+                             const std::string& body);
     static Message make_ack(const std::string& peer_id,
                             const std::string& msg_id);
     static Message make_ping(const std::string& peer_id);

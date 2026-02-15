@@ -64,6 +64,7 @@ nlohmann::json Message::to_json() const {
     j["id"] = id;
     j["sender"] = sender;
     j["nickname"] = nickname;
+    j["tag"] = tag;
     j["body"] = body;
     j["timestamp"] = timestamp;
     return j;
@@ -75,6 +76,9 @@ Message Message::from_json(const nlohmann::json& j) {
     m.id = j.at("id").get<std::string>();
     m.sender = j.at("sender").get<std::string>();
     m.nickname = j.at("nickname").get<std::string>();
+    if (j.contains("tag")) {
+        m.tag = j.at("tag").get<std::string>();
+    }
     m.body = j.at("body").get<std::string>();
     m.timestamp = j.at("timestamp").get<int64_t>();
     return m;
@@ -87,23 +91,27 @@ Message Message::deserialize(const std::string& data) {
 }
 
 Message Message::make_handshake(const std::string& peer_id,
-                                const std::string& nick) {
+                                const std::string& nick,
+                                const std::string& tag) {
     Message m;
     m.type = MessageType::Handshake;
     m.id = generate_uuid();
     m.sender = peer_id;
     m.nickname = nick;
+    m.tag = tag;
     m.timestamp = now_ms();
     return m;
 }
 
 Message Message::make_text(const std::string& peer_id, const std::string& nick,
+                           const std::string& tag,
                            const std::string& body) {
     Message m;
     m.type = MessageType::Text;
     m.id = generate_uuid();
     m.sender = peer_id;
     m.nickname = nick;
+    m.tag = tag;
     m.body = body;
     m.timestamp = now_ms();
     return m;

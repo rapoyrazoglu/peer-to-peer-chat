@@ -78,7 +78,7 @@ TEST_F(ConnectionTest, LoopbackSendReceive) {
     ASSERT_FALSE(server_error.load());
 
     // Send a message from client to server
-    auto msg = Message::make_text("peer-1", "alice", "Hello from client!");
+    auto msg = Message::make_text("peer-1", "alice", "0000", "Hello from client!");
     client_conn->send(msg.serialize());
 
     // Wait for receipt
@@ -140,7 +140,7 @@ TEST_F(ConnectionTest, BidirectionalCommunication) {
 
     // Send 3 messages
     for (int i = 0; i < 3; ++i) {
-        auto msg = Message::make_text("peer-1", "alice",
+        auto msg = Message::make_text("peer-1", "alice", "0000",
                                       "msg-" + std::to_string(i));
         client_conn->send(msg.serialize());
     }

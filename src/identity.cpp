@@ -1,5 +1,6 @@
 #include "peerchat/identity.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <random>
@@ -12,12 +13,17 @@ namespace peerchat {
 Identity::Identity(const std::string& nickname) : nickname_(nickname) {
     if (!load()) {
         peer_id_ = generate_uuid();
+        tag_ = generate_tag();
         spdlog::info("Generated new peer ID: {}", peer_id_);
         save();
     } else {
         spdlog::info("Loaded peer ID: {}", peer_id_);
         if (!nickname.empty()) {
             nickname_ = nickname;
+        }
+        if (tag_.empty()) {
+            tag_ = generate_tag();
+            save();
         }
     }
 }
@@ -58,6 +64,14 @@ std::filesystem::path Identity::identity_path() const {
     return config_dir() / "identity.json";
 }
 
+std::string Identity::generate_tag() {
+    std::mt19937 rng{std::random_device{}()};
+    std::uniform_int_distribution<uint32_t> dist(0, 9999);
+    char buf[5];
+    std::snprintf(buf, sizeof(buf), "%04u", dist(rng));
+    return std::string(buf);
+}
+
 void Identity::save() const {
     auto dir = config_dir();
     std::filesystem::create_directories(dir);
@@ -65,6 +79,7 @@ void Identity::save() const {
     nlohmann::json j;
     j["peer_id"] = peer_id_;
     j["nickname"] = nickname_;
+    j["tag"] = tag_;
 
     std::ofstream f(identity_path());
     if (f.is_open()) {
@@ -87,6 +102,9 @@ bool Identity::load() {
         auto j = nlohmann::json::parse(f);
         peer_id_ = j.at("peer_id").get<std::string>();
         nickname_ = j.at("nickname").get<std::string>();
+        if (j.contains("tag")) {
+            tag_ = j.at("tag").get<std::string>();
+        }
         return true;
     } catch (const std::exception& e) {
         spdlog::warn("Failed to parse identity file: {}", e.what());

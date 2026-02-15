@@ -39,6 +39,10 @@ class PeerManager {
 
     PeerState state() const { return state_; }
     std::string remote_nickname() const { return remote_nickname_; }
+    std::string remote_tag() const { return remote_tag_; }
+    std::string remote_display_name() const {
+        return remote_nickname_ + "#" + remote_tag_;
+    }
     std::string remote_peer_id() const { return remote_peer_id_; }
     std::string remote_address() const;
 
@@ -76,6 +80,7 @@ class PeerManager {
     bool is_initiator_{false};
 
     std::string remote_nickname_;
+    std::string remote_tag_;
     std::string remote_peer_id_;
 
     asio::steady_timer handshake_timer_;

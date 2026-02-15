@@ -1,10 +1,40 @@
 #include "peerchat/app.hpp"
 
 #include "peerchat/client.hpp"
+#include "peerchat/version.hpp"
 
 #include <spdlog/spdlog.h>
 
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+
 namespace peerchat {
+
+namespace {
+
+std::string detect_local_ip() {
+    struct ifaddrs* ifaddr = nullptr;
+    if (getifaddrs(&ifaddr) == -1) return "0.0.0.0";
+
+    std::string result = "0.0.0.0";
+    for (auto* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr) continue;
+        if (ifa->ifa_addr->sa_family != AF_INET) continue;
+        if (ifa->ifa_flags & IFF_LOOPBACK) continue;
+        if (!(ifa->ifa_flags & IFF_UP)) continue;
+
+        char buf[INET_ADDRSTRLEN];
+        auto* sa = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
+        inet_ntop(AF_INET, &sa->sin_addr, buf, sizeof(buf));
+        result = buf;
+        break;
+    }
+    freeifaddrs(ifaddr);
+    return result;
+}
+
+} // namespace
 
 App::App(uint16_t port, const std::string& nickname)
     : identity_(nickname), peer_manager_(io_, identity_) {
@@ -34,7 +64,7 @@ App::App(uint16_t port, const std::string& nickname)
     peer_manager_.on_state_change([this](PeerState state) {
         if (state == PeerState::Connected) {
             cli_.display_system("Connected to " +
-                                peer_manager_.remote_nickname() + " (" +
+                                peer_manager_.remote_display_name() + " (" +
                                 peer_manager_.remote_address() + ")");
         }
     });
@@ -70,9 +100,10 @@ App::App(uint16_t port, const std::string& nickname)
 App::~App() { shutdown(); }
 
 void App::run() {
-    cli_.display_system("PeerChat v0.1.0 | Nickname: " +
-                        identity_.nickname() + " | Port: " +
-                        std::to_string(server_->port()));
+    auto local_ip = detect_local_ip();
+    cli_.display_system("PeerChat v" + Version::string() + " | " +
+                        identity_.display_name() + " | Listening on " +
+                        local_ip + ":" + std::to_string(server_->port()));
 
     // Run io_context in background thread
     auto work = asio::make_work_guard(io_);
@@ -112,11 +143,14 @@ void App::connect_to(const std::string& host, uint16_t port) {
 void App::show_status() {
     cli_.display_system("State: " +
                         peer_state_to_string(peer_manager_.state()));
+    cli_.display_system("Identity: " + identity_.display_name());
     cli_.display_system("Peer ID: " + identity_.peer_id());
-    cli_.display_system("Nickname: " + identity_.nickname());
+    cli_.display_system("Listening on: " + detect_local_ip() + ":" +
+                        std::to_string(server_->port()));
     if (peer_manager_.state() == PeerState::Connected) {
-        cli_.display_system("Remote: " + peer_manager_.remote_nickname() +
-                            " (" + peer_manager_.remote_peer_id() + ")");
+        cli_.display_system("Remote: " +
+                            peer_manager_.remote_display_name() + " (" +
+                            peer_manager_.remote_peer_id() + ")");
         cli_.display_system("Address: " + peer_manager_.remote_address());
     }
 }

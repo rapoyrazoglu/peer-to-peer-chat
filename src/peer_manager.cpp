@@ -47,8 +47,8 @@ void PeerManager::send_text(const std::string& body) {
         return;
     }
 
-    auto msg =
-        Message::make_text(identity_.peer_id(), identity_.nickname(), body);
+    auto msg = Message::make_text(identity_.peer_id(), identity_.nickname(),
+                                   identity_.tag(), body);
     conn_->send(msg.serialize());
     spdlog::debug("Sent text [{}]: {}", msg.id, body);
 }
@@ -93,7 +93,9 @@ void PeerManager::handle_handshake(const Message& msg) {
 
     remote_peer_id_ = msg.sender;
     remote_nickname_ = msg.nickname;
-    spdlog::info("Handshake from {} ({})", remote_nickname_, remote_peer_id_);
+    remote_tag_ = msg.tag;
+    spdlog::info("Handshake from {}#{} ({})", remote_nickname_, remote_tag_,
+                 remote_peer_id_);
 
     handshake_timer_.cancel();
 
@@ -117,7 +119,11 @@ void PeerManager::handle_text(const Message& msg) {
     conn_->send(ack.serialize());
 
     if (on_display_) {
-        on_display_(msg.nickname, msg.body);
+        std::string display = msg.nickname;
+        if (!msg.tag.empty()) {
+            display += "#" + msg.tag;
+        }
+        on_display_(display, msg.body);
     }
 }
 
@@ -144,8 +150,8 @@ void PeerManager::handle_pong() {
 
 void PeerManager::send_handshake() {
     if (!conn_) return;
-    auto msg =
-        Message::make_handshake(identity_.peer_id(), identity_.nickname());
+    auto msg = Message::make_handshake(identity_.peer_id(),
+                                       identity_.nickname(), identity_.tag());
     conn_->send(msg.serialize());
     spdlog::debug("Sent handshake");
 }
@@ -209,6 +215,7 @@ void PeerManager::cleanup() {
     }
 
     remote_nickname_.clear();
+    remote_tag_.clear();
     remote_peer_id_.clear();
     set_state(PeerState::Disconnected);
 }

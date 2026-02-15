@@ -13,6 +13,8 @@ class Identity {
 
     const std::string& peer_id() const { return peer_id_; }
     const std::string& nickname() const { return nickname_; }
+    const std::string& tag() const { return tag_; }
+    std::string display_name() const { return nickname_ + "#" + tag_; }
     void set_nickname(const std::string& nick) { nickname_ = nick; }
 
     // Save identity to disk (~/.peerchat/identity.json)
@@ -27,8 +29,10 @@ class Identity {
   private:
     std::string peer_id_;
     std::string nickname_;
+    std::string tag_;
 
     static std::string generate_uuid();
+    static std::string generate_tag();
     std::filesystem::path identity_path() const;
 };
 

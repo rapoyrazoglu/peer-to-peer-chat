@@ -58,6 +58,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
+# cpp-httplib (header-only HTTP/HTTPS client)
+FetchContent_Declare(
+    httplib
+    GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
+    GIT_TAG v0.15.3
+    GIT_SHALLOW TRUE
+)
+set(HTTPLIB_REQUIRE_OPENSSL ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(httplib)
+
 # --- Find system libsodium ---
 find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
@@ -89,6 +99,7 @@ add_library(peerchat_lib STATIC
     src/peer_manager.cpp
     src/cli.cpp
     src/app.cpp
+    src/updater.cpp
 )
 
 target_include_directories(peerchat_lib PUBLIC
@@ -99,6 +110,7 @@ target_link_libraries(peerchat_lib PUBLIC
     asio
     spdlog::spdlog
     nlohmann_json::nlohmann_json
+    httplib::httplib
 )
 
 if(SODIUM_FOUND)

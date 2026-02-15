@@ -57,18 +57,28 @@ TEST_F(IdentityTest, GeneratesNewIdentity) {
     // UUID v4 format
     EXPECT_EQ(id.peer_id().size(), 36u);
     EXPECT_EQ(id.peer_id()[14], '4');
+
+    // Tag is 4 digits
+    EXPECT_EQ(id.tag().size(), 4u);
+    for (char c : id.tag()) {
+        EXPECT_TRUE(c >= '0' && c <= '9');
+    }
 }
 
 TEST_F(IdentityTest, SaveAndLoad) {
     std::string saved_peer_id;
+    std::string saved_tag;
     {
         Identity id("bob");
         saved_peer_id = id.peer_id();
+        saved_tag = id.tag();
         EXPECT_FALSE(saved_peer_id.empty());
+        EXPECT_FALSE(saved_tag.empty());
     }
 
     Identity id2("charlie");
     EXPECT_EQ(id2.peer_id(), saved_peer_id);
+    EXPECT_EQ(id2.tag(), saved_tag);
     EXPECT_EQ(id2.nickname(), "charlie");
 }
 
@@ -98,4 +108,12 @@ TEST_F(IdentityTest, UniqueIds) {
     }
 
     EXPECT_NE(id1, id2);
+}
+
+TEST_F(IdentityTest, DisplayNameFormat) {
+    Identity id("alice");
+    auto dn = id.display_name();
+    // Should be "alice#XXXX"
+    EXPECT_EQ(dn.substr(0, 6), "alice#");
+    EXPECT_EQ(dn.size(), 10u);
 }
