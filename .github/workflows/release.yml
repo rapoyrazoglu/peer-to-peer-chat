@@ -1,0 +1,171 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsodium-dev
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPEERCHAT_BUILD_TESTS=OFF
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp build/peerchat dist/peerchat
+          strip dist/peerchat
+          cd dist && tar czf ../peerchat-linux-x86_64.tar.gz peerchat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: peerchat-linux-x86_64
+          path: peerchat-linux-x86_64.tar.gz
+
+  build-macos-intel:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install libsodium
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPEERCHAT_BUILD_TESTS=OFF
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.ncpu)
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp build/peerchat dist/peerchat
+          strip dist/peerchat
+          cd dist && tar czf ../peerchat-macos-x86_64.tar.gz peerchat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: peerchat-macos-x86_64
+          path: peerchat-macos-x86_64.tar.gz
+
+  build-macos-arm:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install libsodium
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPEERCHAT_BUILD_TESTS=OFF
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.ncpu)
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp build/peerchat dist/peerchat
+          strip dist/peerchat
+          cd dist && tar czf ../peerchat-macos-arm64.tar.gz peerchat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: peerchat-macos-arm64
+          path: peerchat-macos-arm64.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install libsodium via vcpkg
+        run: vcpkg install libsodium:x64-windows
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPEERCHAT_BUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build
+        run: cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+
+      - name: Package
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item build/Release/peerchat.exe dist/
+          # Copy sodium DLL if present
+          $sodiumDll = Get-ChildItem -Path "$env:VCPKG_INSTALLATION_ROOT" -Recurse -Filter "libsodium.dll" | Select-Object -First 1
+          if ($sodiumDll) { Copy-Item $sodiumDll.FullName dist/ }
+          Compress-Archive -Path dist/* -DestinationPath peerchat-windows-x86_64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: peerchat-windows-x86_64
+          path: peerchat-windows-x86_64.zip
+
+  build-arch-pkg:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install base dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel cmake git libsodium
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPEERCHAT_BUILD_TESTS=OFF
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp build/peerchat dist/peerchat
+          strip dist/peerchat
+          cd dist && tar czf ../peerchat-arch-x86_64.tar.gz peerchat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: peerchat-arch-x86_64
+          path: peerchat-arch-x86_64.tar.gz
+
+  create-release:
+    needs: [build-linux, build-macos-intel, build-macos-arm, build-windows, build-arch-pkg]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/peerchat-linux-x86_64/peerchat-linux-x86_64.tar.gz
+            artifacts/peerchat-macos-x86_64/peerchat-macos-x86_64.tar.gz
+            artifacts/peerchat-macos-arm64/peerchat-macos-arm64.tar.gz
+            artifacts/peerchat-windows-x86_64/peerchat-windows-x86_64.zip
+            artifacts/peerchat-arch-x86_64/peerchat-arch-x86_64.tar.gz
