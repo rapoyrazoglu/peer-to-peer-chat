@@ -80,6 +80,15 @@ endif()
 # --- Main library ---
 add_library(peerchat_lib STATIC
     src/version.cpp
+    src/message.cpp
+    src/framing.cpp
+    src/identity.cpp
+    src/connection.cpp
+    src/server.cpp
+    src/client.cpp
+    src/peer_manager.cpp
+    src/cli.cpp
+    src/app.cpp
 )
 
 target_include_directories(peerchat_lib PUBLIC
@@ -126,6 +135,10 @@ if(PEERCHAT_BUILD_TESTS)
     add_executable(peerchat_tests
         tests/test_main.cpp
         tests/test_version.cpp
+        tests/test_message.cpp
+        tests/test_framing.cpp
+        tests/test_identity.cpp
+        tests/test_connection.cpp
     )
 
     target_link_libraries(peerchat_tests PRIVATE
