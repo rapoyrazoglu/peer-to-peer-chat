@@ -37,7 +37,7 @@ jobs:
           path: peerchat-linux-x86_64.tar.gz
 
   build-macos-intel:
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
