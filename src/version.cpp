@@ -1,4 +1,5 @@
 #include "peerchat/version.hpp"
+#include "peerchat/git_version.hpp"
 
 #include <cstdio>
 #include <sstream>
@@ -10,6 +11,14 @@ std::string Version::string() {
     std::ostringstream ss;
     ss << major << "." << minor << "." << patch;
     return ss.str();
+}
+
+std::string Version::full_string() {
+    return string() + " (" + commit_hash() + ")";
+}
+
+const char* Version::commit_hash() {
+    return PEERCHAT_GIT_HASH;
 }
 
 Version Version::parse(const std::string& s) {

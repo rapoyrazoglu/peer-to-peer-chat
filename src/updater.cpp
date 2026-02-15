@@ -144,11 +144,26 @@ UpdateInfo Updater::check(bool beta) {
         auto tag = release.at("tag_name").get<std::string>();
         info.latest_version = tag;
 
+        // Get the commit hash from the release
+        if (release.contains("target_commitish")) {
+            info.latest_commit =
+                release.at("target_commitish").get<std::string>();
+        }
+
         auto latest = Version::parse(tag);
         auto current = Version::current();
+        auto local_hash = std::string(Version::commit_hash());
 
-        if (current < latest) {
+        bool newer_version = current < latest;
+        bool same_version_different_build =
+            (current == latest) && !info.latest_commit.empty() &&
+            !local_hash.empty() && local_hash != "unknown" &&
+            info.latest_commit.find(local_hash) == std::string::npos &&
+            local_hash.find(info.latest_commit) == std::string::npos;
+
+        if (newer_version || same_version_different_build) {
             info.available = true;
+            info.same_version_rebuild = same_version_different_build;
 
             auto wanted = platform_asset_name();
             if (wanted.empty()) {
@@ -177,7 +192,8 @@ UpdateInfo Updater::check(bool beta) {
 }
 
 bool Updater::perform(bool beta) {
-    std::cout << "Checking for updates...\n";
+    std::cout << "Checking for updates... (current: v"
+              << Version::full_string() << ")\n";
     auto info = check(beta);
 
     if (!info.available) {
@@ -191,8 +207,14 @@ bool Updater::perform(bool beta) {
         return false;
     }
 
-    std::cout << "Updating: v" << info.current_version << " -> "
-              << info.latest_version << "\n";
+    if (info.same_version_rebuild) {
+        std::cout << "Rebuild available: same version but different build\n";
+        std::cout << "  Local:  " << Version::commit_hash() << "\n";
+        std::cout << "  Remote: " << info.latest_commit.substr(0, 7) << "\n";
+    } else {
+        std::cout << "Updating: v" << info.current_version << " -> "
+                  << info.latest_version << "\n";
+    }
     std::cout << "Downloading " << info.asset_name << "...\n";
 
     try {

@@ -7,16 +7,23 @@ namespace peerchat {
 
 struct Version {
     static constexpr int major = 0;
-    static constexpr int minor = 1;
+    static constexpr int minor = 2;
     static constexpr int patch = 0;
 
     int maj{0};
     int min{0};
     int pat{0};
 
+    // "0.2.0"
     static std::string string();
 
-    // Parse version from string like "0.1.0" or "v0.1.0"
+    // "0.2.0 (a3deab2)"
+    static std::string full_string();
+
+    // Build commit hash
+    static const char* commit_hash();
+
+    // Parse version from string like "0.2.0" or "v0.2.0"
     static Version parse(const std::string& s);
 
     // Current version as a Version instance

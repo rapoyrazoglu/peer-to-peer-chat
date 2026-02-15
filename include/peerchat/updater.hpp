@@ -6,8 +6,10 @@ namespace peerchat {
 
 struct UpdateInfo {
     bool available{false};
+    bool same_version_rebuild{false};
     std::string current_version;
     std::string latest_version;
+    std::string latest_commit;
     std::string asset_url;
     std::string asset_name;
 };

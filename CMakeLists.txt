@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(peerchat
-    VERSION 0.1.0
+    VERSION 0.2.0
     DESCRIPTION "Peer-to-peer decentralized chat application"
     LANGUAGES CXX
 )
@@ -87,6 +87,23 @@ if(NOT SODIUM_FOUND)
     endif()
 endif()
 
+# --- Git commit hash ---
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT GIT_COMMIT_HASH)
+    set(GIT_COMMIT_HASH "unknown")
+endif()
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/peerchat/git_version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/peerchat/git_version.hpp
+    @ONLY
+)
+
 # --- Main library ---
 add_library(peerchat_lib STATIC
     src/version.cpp
@@ -104,6 +121,7 @@ add_library(peerchat_lib STATIC
 
 target_include_directories(peerchat_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
 target_link_libraries(peerchat_lib PUBLIC

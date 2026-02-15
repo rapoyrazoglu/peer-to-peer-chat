@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     auto args = parse_args(argc, argv);
 
     if (args.show_version) {
-        std::cout << "PeerChat v" << peerchat::Version::string() << "\n";
+        std::cout << "PeerChat v" << peerchat::Version::full_string() << "\n";
         return 0;
     }
 
