@@ -1,5 +1,6 @@
 #include "peerchat/identity.hpp"
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 
@@ -7,21 +8,40 @@
 
 using namespace peerchat;
 
+namespace {
+
+void set_env(const char* name, const char* value) {
+#ifdef _WIN32
+    _putenv_s(name, value);
+#else
+    setenv(name, value, 1);
+#endif
+}
+
+const char* home_var() {
+#ifdef _WIN32
+    return "USERPROFILE";
+#else
+    return "HOME";
+#endif
+}
+
+} // namespace
+
 class IdentityTest : public ::testing::Test {
   protected:
     void SetUp() override {
-        // Use a temporary directory for test identity
         test_dir_ = std::filesystem::temp_directory_path() / "peerchat_test";
         std::filesystem::create_directories(test_dir_);
-        // Override HOME to isolate tests
-        original_home_ = std::getenv("HOME") ? std::getenv("HOME") : "";
-        setenv("HOME", test_dir_.c_str(), 1);
+        const char* h = std::getenv(home_var());
+        original_home_ = h ? h : "";
+        set_env(home_var(), test_dir_.string().c_str());
     }
 
     void TearDown() override {
         std::filesystem::remove_all(test_dir_);
         if (!original_home_.empty()) {
-            setenv("HOME", original_home_.c_str(), 1);
+            set_env(home_var(), original_home_.c_str());
         }
     }
 
@@ -47,10 +67,8 @@ TEST_F(IdentityTest, SaveAndLoad) {
         EXPECT_FALSE(saved_peer_id.empty());
     }
 
-    // Creating a new identity with same home should load the saved one
     Identity id2("charlie");
     EXPECT_EQ(id2.peer_id(), saved_peer_id);
-    // Nickname overridden by constructor arg
     EXPECT_EQ(id2.nickname(), "charlie");
 }
 
@@ -61,12 +79,11 @@ TEST_F(IdentityTest, IdentityFileExists) {
 }
 
 TEST_F(IdentityTest, UniqueIds) {
-    // Generate two identities in different directories
     std::string id1;
     {
         auto dir1 = test_dir_ / "home1";
         std::filesystem::create_directories(dir1);
-        setenv("HOME", dir1.c_str(), 1);
+        set_env(home_var(), dir1.string().c_str());
         Identity identity1("a");
         id1 = identity1.peer_id();
     }
@@ -75,7 +92,7 @@ TEST_F(IdentityTest, UniqueIds) {
     {
         auto dir2 = test_dir_ / "home2";
         std::filesystem::create_directories(dir2);
-        setenv("HOME", dir2.c_str(), 1);
+        set_env(home_var(), dir2.string().c_str());
         Identity identity2("b");
         id2 = identity2.peer_id();
     }
