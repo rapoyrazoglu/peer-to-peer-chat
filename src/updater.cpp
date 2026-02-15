@@ -9,14 +9,12 @@
 #include <iostream>
 #include <stdexcept>
 
-#if defined(__APPLE__)
-#include <mach-o/dyld.h>
-#elif defined(_WIN32)
-#include <windows.h>
-#endif
-
 #include <httplib.h>
 #include <nlohmann/json.hpp>
+
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
 
 namespace peerchat {
 

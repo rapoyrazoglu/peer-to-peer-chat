@@ -5,15 +5,38 @@
 
 #include <spdlog/spdlog.h>
 
+#if defined(_WIN32)
+#include <winsock2.h>
+#include <iphlpapi.h>
+#include <ws2tcpip.h>
+#pragma comment(lib, "iphlpapi.lib")
+#pragma comment(lib, "ws2_32.lib")
+#else
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <net/if.h>
+#endif
 
 namespace peerchat {
 
 namespace {
 
 std::string detect_local_ip() {
+#if defined(_WIN32)
+    char hostname[256];
+    if (gethostname(hostname, sizeof(hostname)) != 0) return "0.0.0.0";
+    struct addrinfo hints{}, *res = nullptr;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(hostname, nullptr, &hints, &res) != 0 || !res)
+        return "0.0.0.0";
+    char buf[INET_ADDRSTRLEN];
+    auto* sa = reinterpret_cast<struct sockaddr_in*>(res->ai_addr);
+    inet_ntop(AF_INET, &sa->sin_addr, buf, sizeof(buf));
+    std::string result = buf;
+    freeaddrinfo(res);
+    return result;
+#else
     struct ifaddrs* ifaddr = nullptr;
     if (getifaddrs(&ifaddr) == -1) return "0.0.0.0";
 
@@ -32,6 +55,7 @@ std::string detect_local_ip() {
     }
     freeifaddrs(ifaddr);
     return result;
+#endif
 }
 
 } // namespace
